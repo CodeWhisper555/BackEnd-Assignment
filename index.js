@@ -1,7 +1,11 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+
+// Routes
 const planRoutes = require("./routes/planRoutes");
+const authRoutes = require("./routes/auth");
+
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -23,6 +27,7 @@ app.use((req,res,next) =>{
     next();
 })
 
+app.use("/auth",authRoutes);
 app.use("/plans",planRoutes);
 
 app.use(errorHandler);
