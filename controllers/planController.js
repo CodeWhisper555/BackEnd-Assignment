@@ -4,12 +4,18 @@ const Plan = require('../models/plan');
 exports.getPlans = async (req, res, next) => {
   try{
     let query = {};
-    if(req.query.priority){
+    
+    if(req.query.priority) {
       query.priority = req.query.priority;
     }
 
+    if(req.query.search) {
+      query.subject = { $regex: req.query.search, $options: 'i' };
+    }
+
     let plansQuery = Plan.find(query);
-    if(req.query.sort === 'hours'){
+    
+    if(req.query.sort === 'hours') {
       plansQuery = plansQuery.sort('hours');
     }
 
