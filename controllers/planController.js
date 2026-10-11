@@ -4,22 +4,53 @@ const Plan = require('../models/plan');
 exports.getPlans = async (req, res, next) => {
   try{
     let query = {};
-    
-    if(req.query.priority) {
+
+    if(req.query.priority){
       query.priority = req.query.priority;
     }
 
-    if(req.query.search) {
-      query.subject = { $regex: req.query.search, $options: 'i' };
+    if(req.query.search){
+      const safe = req.query.search.replace(
+        /[.*+?^${}()|[\]\\]/g, "\\$&"
+      );
+      query.subject = { $regex: safe, $options: 'i' };
+    }
+
+    if(req.query.completed !== undefined){
+      query.completed = req.query.completed === 'true';
     }
 
     let plansQuery = Plan.find(query);
     
-    if(req.query.sort === 'hours') {
+    if(req.query.sort === 'hours'){
       plansQuery = plansQuery.sort('hours');
+    }
+    
+    if(req.query.sort === '-hours'){
+      plansQuery = plansQuery.sort('-hours');
+    }
+
+    const page = Math.max(Number(req.query.page) || 1,1);
+    const limit = Math.min( Math.max( Number(req.query.limit) || 5, 1 ) , 50 );
+    
+    const total = await Plan.countDocuments(query);
+
+    if(limit > 0){
+      const skip = (page - 1) * limit;
+      plansQuery = plansQuery.skip(skip).limit(limit);
     }
 
     const plans = await plansQuery;
+
+    if(req.query.page || req.query.limit){
+      return res.status(200).json({
+        total,
+        page,
+        pages: limit > 0 ? Math.ceil(total / limit) : 1,
+        plans,
+      });
+    }
+
     res.status(200).json(plans);
   } 
   catch(err){
